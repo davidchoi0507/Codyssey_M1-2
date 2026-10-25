@@ -3,6 +3,9 @@
  * 백엔드 REST API 통신 및 Render 콜드스타트 감지
  */
 
+// Render 공식 배포 백엔드 기본 URL (입력 없이도 전 세계 어디서나 100% 자동 연결)
+const DEFAULT_PRODUCTION_BACKEND = 'https://codyssey-m1-2-0e02.onrender.com';
+
 // 로컬 개발 및 클라우드 배포(Render/Vercel) 완전 대응 동적 Base URL 해석기
 function getApiBaseUrl() {
   if (typeof window !== 'undefined') {
@@ -21,7 +24,8 @@ function getApiBaseUrl() {
       return 'http://localhost:8000';
     }
   }
-  return '';
+  // 4. 배포 환경(Vercel 등) 기본 백엔드 영구 고정
+  return DEFAULT_PRODUCTION_BACKEND;
 }
 
 class ApiClient {

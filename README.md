@@ -96,8 +96,8 @@ sequenceDiagram
 ## 4. 배포 URL 안내
 
 * **프론트엔드 서비스 URL**: `https://soundpulse-ai.vercel.app` *(배포 후 입력)*
-* **백엔드 API URL**: `https://soundpulse-ai-backend.onrender.com` *(배포 후 입력)*
-* **Swagger UI API 문서**: `https://soundpulse-ai-backend.onrender.com/docs` *(배포 후 입력)*
+* **백엔드 API URL**: `https://codyssey-m1-2-0e02.onrender.com`
+* **Swagger UI API 문서**: `https://codyssey-m1-2-0e02.onrender.com/docs`
 
 ---
 
