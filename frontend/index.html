@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SoundPulse AI | 글로벌 음원 스트리밍 차트 인텔리전스</title>
+  <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  
+  <!-- Chart.js CDN (보너스 과제 2) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- CSS Stylesheets -->
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+
+  <!-- 콜드스타트(Render 지연) 안내 모달 (questions.md 항목 4-1 대비) -->
+  <div id="coldStartModal" class="modal-backdrop hidden">
+    <div class="modal-box cold-start-box">
+      <div class="sound-wave-large">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <h3>글로벌 차트 서버를 예열하고 있습니다...</h3>
+      <p class="cold-start-desc">
+        무료 호스팅(Render) 절전 모드가 해제되는 데 약 30초~50초가 소요될 수 있습니다.<br>
+        잠시만 기다려주시면 실시간 스트리밍 인텔리전스가 연결됩니다.
+      </p>
+      <div class="progress-bar-container">
+        <div id="coldStartProgress" class="progress-bar"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="app-layout">
+
+    <!-- 사이드바 (대화 기록 & 네비게이션) -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="brand">
+          <div class="brand-icon">
+            <span class="bar"></span><span class="bar"></span><span class="bar"></span>
+          </div>
+          <div class="brand-text">
+            <h2>SoundPulse</h2>
+            <span class="badge">A&R Intelligence</span>
+          </div>
+        </div>
+        <button id="newChatBtn" class="btn btn-outline new-chat-btn" title="새 대화 시작">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          새 분석 세션
+        </button>
+      </div>
+
+      <!-- 대화 히스토리 목록 -->
+      <div class="conversations-section">
+        <span class="section-label">이전 분석 세션 기록</span>
+        <div class="conversations-list" id="conversationsList">
+          <!-- 동적 로드 -->
+        </div>
+      </div>
+
+      <!-- 사이드바 하단: 테마 토글 & 상태 -->
+      <div class="sidebar-footer">
+        <div class="theme-switch-container">
+          <span class="theme-label">테마 모드</span>
+          <button id="themeToggleBtn" class="theme-toggle-btn" title="다크/라이트 테마 변경">
+            <span class="theme-icon sun-icon">☀️ 라이트 모드</span>
+            <span class="theme-icon moon-icon">🌙 다크 모드</span>
+          </button>
+        </div>
+        <div class="system-status" id="systemStatus">
+          <span class="status-dot"></span>
+          <span class="status-text">서버 연결 확인 중...</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 메인 대시보드 영역 -->
+    <main class="main-content">
+      
+      <!-- 상단 헤더 & 모바일 탭 -->
+      <header class="top-nav">
+        <div class="mobile-menu-btn" id="mobileMenuBtn">
+          <span></span><span></span><span></span>
+        </div>
+        <div class="nav-tabs">
+          <button class="nav-tab active" data-tab="dashboard">대시보드 & 통계</button>
+          <button class="nav-tab" data-tab="simulator">A&R 컴백 시뮬레이터</button>
+          <button class="nav-tab" data-tab="data-manage">차트 데이터 관리 (CRUD)</button>
+          <button class="nav-tab" data-tab="chat">AI A&R 비서</button>
+        </div>
+        <div class="nav-actions">
+          <!-- [신규] 실시간 AI API Key 연결 인디케이터 (초록 불 / 꺼진 불) -->
+          <button id="apiKeyStatusBtn" class="btn btn-sm api-key-status-btn" title="AI API Key 연결 상태 확인 및 설정">
+            <span class="api-status-light" id="apiStatusLight"></span>
+            <span class="api-status-text" id="apiStatusText">AI Key 확인 중...</span>
+          </button>
+
+          <button id="openGuideBtn" class="btn btn-sm btn-ghost" title="서비스 가이드 & 기능 안내">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            사용 가이드
+          </button>
+          <button id="downloadReportBtn" class="btn btn-sm btn-outline text-purple" title="A&R 전략 보고서 다운로드">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            A&R 전략 기획서 다운로드
+          </button>
+          <button id="exportCsvBtn" class="btn btn-sm btn-ghost" title="CSV 내보내기">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            CSV 다운로드
+          </button>
+          <button id="exportJsonBtn" class="btn btn-sm btn-ghost" title="JSON 내보내기">
+            JSON 다운로드
+          </button>
+        </div>
+      </header>
+
+      <!-- 컨텐츠 패널들 -->
+      <div class="tab-content-container">
+
+        <!-- [탭 1] 대시보드 & 통계 & 인터랙티브 차트 -->
+        <section id="tab-dashboard" class="tab-pane active">
+          
+          <!-- 기간 필터 바 & 타임프레임 슬라이더 (questions.md 항목 4-4 완벽 대응) -->
+          <div class="period-filter-bar">
+            <div class="filter-top-row">
+              <div class="filter-label-group">
+                <span class="filter-label">분석 타임프레임:</span>
+                <span class="slider-value-badge" id="timeframeSliderBadge">전체 4개년 (1,390일 전수 분석)</span>
+              </div>
+              <div class="period-btn-group">
+                <button class="period-btn active" data-days="all">전체 4개년 (1,390일)</button>
+                <button class="period-btn" data-days="730">최근 2개년</button>
+                <button class="period-btn" data-days="365">최근 1년</button>
+                <button class="period-btn" data-days="90">최근 분기 (90일)</button>
+                <button class="period-btn" data-days="30">최근 30일 모멘텀</button>
+              </div>
+            </div>
+
+            <!-- 대화형 인터랙티브 타임프레임 슬라이더 -->
+            <div class="timeframe-slider-row">
+              <div class="slider-control-wrap">
+                <span class="slider-min-label">최근 7일</span>
+                <input type="range" id="timeframeSlider" class="timeframe-slider" min="7" max="1390" value="1390" step="1">
+                <span class="slider-max-label">전체 (1,390일)</span>
+              </div>
+              <div class="custom-days-direct">
+                <input type="number" id="customDaysInput" class="custom-days-input" min="7" max="1390" placeholder="1390" value="1390">
+                <span class="custom-days-unit">일간 분석</span>
+                <button type="button" id="applyCustomDaysBtn" class="btn btn-sm btn-ghost apply-days-btn" title="직접 입력 기간 적용">적용</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- A&R Executive Snapshot (3대 골든 룰 퀵 브리핑 배너) -->
+          <div class="golden-rules-banner">
+            <div class="rules-header">
+              <div class="rules-badge">
+                <span class="pulse-beacon"></span>
+                A&R EXECUTIVE SUMMARY
+              </div>
+              <span class="rules-sub-title">스포티파이 글로벌 1위 진입을 위한 3대 핵심 골든 룰 (Golden Rules)</span>
+            </div>
+            <div class="rules-grid">
+              <div class="rule-item">
+                <div class="rule-icon-circle">🗓️</div>
+                <div class="rule-info">
+                  <strong>최적 릴리즈 요일: 금요일 (Friday)</strong>
+                  <span>빌보드·스포티파이 글로벌 주간 집계(금~목) 사이클 78% 극대화</span>
+                </div>
+              </div>
+              <div class="rule-item">
+                <div class="rule-icon-circle">⚡</div>
+                <div class="rule-info">
+                  <strong>황금 템포: 120 ~ 130 BPM</strong>
+                  <span>글로벌 숏폼 챌린지 및 댄스팝 바이럴 전환율 역대 1위 구간</span>
+                </div>
+              </div>
+              <div class="rule-item">
+                <div class="rule-icon-circle">🎄</div>
+                <div class="rule-info">
+                  <strong>위험 시즌: 12월 연말 캐럴 쇼크</strong>
+                  <span>머라이어 캐리 등 캐럴 스트리밍 폭증(+180%)으로 일반 신곡 컴백 절대 회피</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 직관적인 A&R 스토리텔링 핵심 지표 카드 덱 -->
+          <div class="metrics-grid">
+            
+            <!-- [카드 1] 분석 모수 & 신뢰도 -->
+            <div class="metric-card">
+              <div class="metric-card-header">
+                <div class="card-icon-box text-green">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                </div>
+                <span class="metric-badge-sm">신뢰도 100%</span>
+              </div>
+              <span class="metric-title">글로벌 1위 전수 분석 모수</span>
+              <div class="metric-value-row">
+                <span class="metric-value" id="metricCount">1,390</span>
+                <span class="metric-unit">일간 전수 집계</span>
+              </div>
+              <p class="metric-sub" id="metricPeriod">집계 기간: 2021-01-01 ~ 2024-10-21</p>
+              <div class="metric-tip-box">
+                <span class="tip-dot"></span>
+                <span>단 하루도 누락 없는 4개년 1위 실적 전수 조사</span>
+              </div>
+            </div>
+
+            <!-- [카드 2] 1위 요구 스트리밍 (Target Goal) -->
+            <div class="metric-card highlight">
+              <div class="metric-card-header">
+                <div class="card-icon-box text-green">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+                </div>
+                <span class="metric-badge-sm target-badge">TARGET GOAL</span>
+              </div>
+              <span class="metric-title">글로벌 1위 요구 기준선</span>
+              <div class="metric-value-row">
+                <span class="metric-value text-green" id="metricAverage">1,147.2</span>
+                <span class="metric-unit">만 회 / 일</span>
+              </div>
+              <p class="metric-sub" id="metricHurdle">상위 25% 초안전권: 일 1,280만 회 이상</p>
+              <div class="metric-tip-box highlight-tip">
+                <span class="tip-dot"></span>
+                <span>💡 신곡 컴백 시 일간 1,150만 회 돌파가 1위 관건!</span>
+              </div>
+            </div>
+
+            <!-- [카드 3] 황금 템포 & 장르 스위트스팟 -->
+            <div class="metric-card">
+              <div class="metric-card-header">
+                <div class="card-icon-box text-purple">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                </div>
+                <span class="metric-badge-sm purple-badge">황금 템포</span>
+              </div>
+              <span class="metric-title">1위 명곡 템포 스위트스팟</span>
+              <div class="metric-value-row">
+                <span class="metric-value text-purple" id="metricBpm">125.8</span>
+                <span class="metric-unit">평균 BPM</span>
+              </div>
+              <p class="metric-sub" id="metricGenreTop">주요 장르: Pop Punk / Dance-Pop</p>
+              <div class="metric-tip-box">
+                <span class="tip-dot"></span>
+                <span>경쾌한 댄스팝 리듬 (정국 'Seven', Sabrina 'Espresso')</span>
+              </div>
+            </div>
+
+            <!-- [카드 4] 시장 파이 성장세 -->
+            <div class="metric-card">
+              <div class="metric-card-header">
+                <div class="card-icon-box text-blue">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                </div>
+                <span class="metric-badge-sm blue-badge" id="metricTrend">초강세 성장</span>
+              </div>
+              <span class="metric-title">글로벌 스트리밍 시장 팽창도</span>
+              <div class="metric-value-row">
+                <span class="metric-value text-blue" id="metricYoy">+11.7%</span>
+                <span class="metric-unit">전년 대비(YoY)</span>
+              </div>
+              <p class="metric-sub">차트 경쟁 강도: 매우 치열 (상위 집중도 심화)</p>
+              <div class="metric-tip-box">
+                <span class="tip-dot"></span>
+                <span>팬데믹 이후 전 세계 음원 스트리밍 총량 폭증 추세</span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- 차트 & 최장 1위 곡 정보 섹션 (보너스 과제 2) -->
+          <div class="chart-section">
+            <div class="card chart-card">
+              <div class="card-header">
+                <div>
+                  <h3>Spotify Global 1위 시계열 추이 & 7일 이동평균선(7-Day MA)</h3>
+                  <p class="card-desc">네온 그린: 일간 1위 실적 / 퍼플 라인: 노이즈 보정 7일 이동평균선</p>
+                </div>
+                <div class="streak-pill" id="longestStreakPill">
+                  🔥 최장 1위: 로딩 중...
+                </div>
+              </div>
+              <div class="chart-wrapper">
+                <canvas id="streamingChart"></canvas>
+              </div>
+            </div>
+          </div>
+
+        </section>
+
+
+        <!-- [신규 탭] Track-to-Track 곡 기반 A&R 컴백 시뮬레이터 -->
+        <section id="tab-simulator" class="tab-pane">
+          <div class="card simulator-card">
+            <div class="card-header">
+              <div>
+                <h3>Track-to-Track 곡 기반 A&R 컴백 시뮬레이터</h3>
+                <p class="card-desc">신곡의 장르와 BPM을 과거 1,390일치 1위 명곡들과 오디오 유사도 매칭하여 성과와 1위 유지력을 예측합니다.</p>
+              </div>
+            </div>
+
+            <div class="simulator-layout">
+              <!-- 입력 폼 -->
+              <form id="simulatorForm" class="simulator-form">
+                
+                <!-- [신규] 음원 직접 업로드 & Librosa + AI 오디오 분석 드롭존 -->
+                <div class="audio-upload-dropzone" id="audioDropzone">
+                  <input type="file" id="audioFileInput" accept=".mp3,.wav,.m4a,.flac,.ogg,.aac" style="display: none;">
+                  
+                  <div class="dropzone-content" id="dropzonePrompt">
+                    <div class="dropzone-icon-wrap">
+                      <span class="dropzone-icon">🎧</span>
+                    </div>
+                    <div class="dropzone-text">
+                      <strong>내 음원 파일(MP3, WAV, M4A) 드래그 & 드롭</strong>
+                      <p>Librosa가 정밀 BPM · 에너지를 자동 측정하고, AI가 장르와 무드를 자동 분석합니다.</p>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline select-file-btn" id="selectAudioFileBtn">음원 파일 선택</button>
+                  </div>
+
+                  <!-- 오디오 분석 완료 상태창 (미니 웨이브폼 & 자동 감지 배지) -->
+                  <div class="dropzone-analysis-result hidden" id="dropzoneResult">
+                    <div class="audio-track-header">
+                      <div class="track-info-mini">
+                        <span class="music-note-icon">🎶</span>
+                        <div>
+                          <strong id="analyzedTrackName">내 트랙.mp3</strong>
+                          <span class="track-analysis-meta" id="analyzedMeta">BPM: -- | 에너지: -- | 밝기: --</span>
+                        </div>
+                      </div>
+                      <button type="button" class="btn btn-sm btn-ghost reset-audio-btn" id="resetAudioBtn" title="다른 음원으로 변경">&times; 재업로드</button>
+                    </div>
+
+                    <div class="waveform-wrap">
+                      <canvas id="audioWaveformCanvas" height="42" style="width: 100%; height: 42px;"></canvas>
+                      <button type="button" class="mini-play-btn" id="miniPlayAudioBtn" title="음원 재생/일시정지">
+                        <span class="play-icon">▶</span>
+                      </button>
+                    </div>
+
+                    <div class="ai-qualitative-pill" id="aiQualitativePill">
+                      <span class="ai-sparkle">✨</span>
+                      <p id="aiQualitativeText">AI A&R 정성 평가 로딩 중...</p>
+                    </div>
+                  </div>
+
+                  <!-- 오디오 분석 중 로딩 스피너 -->
+                  <div class="dropzone-loading hidden" id="audioLoadingIndicator">
+                    <div class="sound-wave-mini">
+                      <span></span><span></span><span></span><span></span>
+                    </div>
+                    <span>Librosa & AI 오디오 분석 엔진이 정밀 BPM과 음향 특성을 추출 중입니다...</span>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="simTitle">신곡 프로젝트 명</label>
+                  <input type="text" id="simTitle" class="form-input" value="Midnight Neon (신곡)" placeholder="곡명 또는 프로젝트명">
+                </div>
+
+                <div class="form-group">
+                  <label for="simGenre">신곡 장르 (Genre)</label>
+                  <select id="simGenre" class="form-input">
+                    <option value="Pop Punk" selected>Pop Punk / Alt-Rock (에너제틱 / 록 사운드)</option>
+                    <option value="Nu-Disco / Pop">Nu-Disco / Dance-Pop (청량한 댄스 / 서머송)</option>
+                    <option value="UK Garage / Pop">UK Garage / Pop (세련된 비트 / 팝 그루브)</option>
+                    <option value="Synth-Pop">Synth-Pop / New Wave (복고 신스 / 중독적 훅)</option>
+                    <option value="Alt-R&B / Soul">Alt-R&B / Soul (감성적 / 멜랑콜리)</option>
+                    <option value="Bedroom Pop">Bedroom Pop / Indie Pop (Z세대 감성 / 칠)</option>
+                    <option value="Reggaeton / Latin">Reggaeton / Latin Urban (클럽 / 리드미컬)</option>
+                    <option value="Pop-Rap">Pop-Rap / Hip-Hop (비트 바이럴 / 캐주얼)</option>
+                    <option value="Holiday Pop">Holiday Pop / Carol (연말 캐럴)</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <label for="simBpm" style="margin-bottom: 0;">신곡 템포 (BPM)</label>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                      <button type="button" id="bpmAudioBtn" class="btn btn-sm bpm-audio-pill" title="현재 BPM 템포 비트 펄스 청취">
+                        <span class="audio-play-icon">▶</span>
+                        <span class="audio-btn-label">비트 청취</span>
+                      </button>
+                      <span id="bpmDisplay" style="font-family: var(--font-mono); font-weight: 700; color: var(--accent-green); font-size: 1.05rem;">149 BPM</span>
+                    </div>
+                  </div>
+                  <input type="range" id="simBpm" min="70" max="185" value="149" class="form-range" style="width: 100%; accent-color: var(--accent-green); cursor: pointer;">
+                  <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">
+                    <span>70 (슬로우 R&B)</span>
+                    <span>120 (댄스팝 스위트스팟)</span>
+                    <span>185 (고속 팝펑크)</span>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="simMonth">컴백 예정 월 (Target Month)</label>
+                  <select id="simMonth" class="form-input">
+                    <option value="1">1월 (연초 비수기 / 진입 유리)</option>
+                    <option value="2">2월</option>
+                    <option value="3">3월 (봄 시즌 / 댄스팝 강세)</option>
+                    <option value="4">4월</option>
+                    <option value="5">5월</option>
+                    <option value="6">6월 (초여름 서머송 시즌 시작)</option>
+                    <option value="7" selected>7월 (서머 피크 / 글로벌 격돌)</option>
+                    <option value="8">8월 (늦여름 시즌)</option>
+                    <option value="9">9월 (가을 시즌)</option>
+                    <option value="10">10월 (하반기 신보 집중)</option>
+                    <option value="11">11월 (캐럴 전야 / 리스크 시작)</option>
+                    <option value="12">12월 (연말 캐럴 쇼크 / 극위험)</option>
+                  </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary sim-btn">
+                  <span>오디오 유사도 매칭 & 시뮬레이션 가동</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </button>
+              </form>
+
+              <!-- [Empty State] 시뮬레이션 가동 전 대기 상태 안내 -->
+              <div class="empty-state-box" id="simEmptyState">
+                <div class="empty-state-icon-pulse">
+                  <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 18V5l12-2v13"></path>
+                    <circle cx="6" cy="18" r="3"></circle>
+                    <circle cx="18" cy="16" r="3"></circle>
+                  </svg>
+                </div>
+                <h4 class="empty-state-title">신곡 분석 및 시뮬레이션 대기 중</h4>
+                <p class="empty-state-desc">
+                  상단에서 <strong>음원 파일(.mp3, .wav)을 업로드</strong>하시거나 신곡 스펙(BPM, 장르, 타깃 월)을 설정한 후<br>
+                  <strong class="text-green">[오디오 유사도 매칭 & 시뮬레이션 가동]</strong> 버튼을 누르면 1,390일 차트 기반 예측 리포트가 이곳에 생성됩니다.
+                </p>
+                <div class="empty-state-hints">
+                  <span class="empty-hint-tag">🎧 오디오 DNA 도플갱어 매칭</span>
+                  <span class="empty-hint-tag">📊 예상 1위 확률 & 스트리밍 유지력</span>
+                  <span class="empty-hint-tag">🎨 앨범 비주얼 무드 팔레트</span>
+                </div>
+                <button type="button" class="btn btn-sm empty-state-demo-btn" id="simSampleDemoBtn">
+                  <span>💡 샘플 데이터(APT. 팝펑크)로 1초 체험해보기</span>
+                </button>
+              </div>
+
+              <!-- 시뮬레이션 결과 디스플레이 -->
+              <div class="simulator-results hidden" id="simResults">
+                
+                <!-- 도플갱어 벤치마크 곡 매칭 카드 (시각디자인 특화: 턴테이블 바이닐 레코드 프리뷰) -->
+                <div class="benchmark-match-card">
+                  <div class="vinyl-disc-container">
+                    <div class="vinyl-disc" title="Benchmark Track Vinyl">
+                      <div class="vinyl-center-label">
+                        <div class="vinyl-hole"></div>
+                      </div>
+                    </div>
+                    <div class="benchmark-text-info">
+                      <div class="match-badge">
+                        <span>🔥 오디오 DNA 벤치마크 매칭: </span>
+                        <strong id="simMatchScore" class="text-green">96.3% 일치</strong>
+                      </div>
+                      <h4 id="simMatchSong" style="font-size: 1.15rem; margin: 6px 0 3px;">APT. - ROSÉ & Bruno Mars</h4>
+                      <div style="font-size: 0.8rem; color: var(--text-secondary);" id="simMatchMeta">
+                        Genre: Pop Punk | BPM: 149 | 과거 1위 독점: 133일간
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="result-header">
+                  <div>
+                    <span class="result-label">예상 1위 달성 확률</span>
+                    <div class="prob-num text-green" id="simWinProb">88.5%</div>
+                  </div>
+                  <div style="text-align: right;">
+                    <span class="result-label">예상 1위 유지력</span>
+                    <div style="font-family: var(--font-mono); font-size: 1.8rem; font-weight: 700; color: var(--accent-purple);" id="simExpectedStreak">
+                      약 87일간
+                    </div>
+                  </div>
+                </div>
+
+                <div class="prob-bar-container">
+                  <div class="prob-bar" id="simProbBar" style="width: 88.5%;"></div>
+                </div>
+
+                <div class="sim-meta-grid">
+                  <div class="sim-meta-item">
+                    <span class="meta-label">시즌 리스크</span>
+                    <span class="meta-val badge-risk" id="simRiskBadge">치열 (여름 서머송 시즌)</span>
+                  </div>
+                  <div class="sim-meta-item">
+                    <span class="meta-label">해당 월 과거 1위 평균</span>
+                    <span class="meta-val" id="simHistAvg">1,180만 회</span>
+                  </div>
+                  <div class="sim-meta-item">
+                    <span class="meta-label">추천 발매 요일</span>
+                    <span class="meta-val text-green" id="simDay">금요일</span>
+                  </div>
+                </div>
+
+                <div class="advice-card">
+                  <h4>💡 A&R 맞춤 전략 제언</h4>
+                  <p id="simAdviceText">로딩 중...</p>
+                </div>
+
+                <!-- [신규 기능 1] Visual Mood Color Palette (시각디자인 전공 특화: 앨범 컬러 팔레트) -->
+                <div class="color-palette-card">
+                  <div class="palette-header">
+                    <h4>🎨 Visual Mood Palette (추천 앨범 비주얼 팔레트)</h4>
+                    <span class="palette-sub" id="paletteMoodLabel">Mood: High-Energy Neon Punk</span>
+                  </div>
+                  <p class="palette-desc">신곡의 장르와 무드에 최적화된 앨범 커버 디자인 키 컬러입니다. 클릭하여 HEX 코드를 복사하세요.</p>
+                  <div class="color-swatches-grid" id="paletteSwatches">
+                    <!-- 동적 생성 -->
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- [신규 기능 2] Head-to-Head 메가히트 1:1 비교 배틀 -->
+            <div class="battle-section">
+              <div class="card-header space-between" style="margin-top: 36px; border-top: 1px solid var(--border-color); padding-top: 28px;">
+                <div>
+                  <h3>⚔️ Head-to-Head 메가히트 1:1 비교 배틀</h3>
+                  <p class="card-desc">역대 1위를 장악한 두 메가히트곡의 화력, 1위 유지력(Streak), 음악적 DNA를 1:1로 비교 분석합니다.</p>
+                </div>
+              </div>
+
+              <div class="battle-controls-grid">
+                <div class="battle-selector">
+                  <label for="trackSelectA">곡 A 선택</label>
+                  <select id="trackSelectA" class="form-input">
+                    <option value="APT. - ROSÉ & Bruno Mars" selected>APT. - ROSÉ & Bruno Mars (2024)</option>
+                    <option value="Seven (feat. Latto) - Jung Kook">Seven (feat. Latto) - Jung Kook (2023)</option>
+                    <option value="Espresso - Sabrina Carpenter">Espresso - Sabrina Carpenter (2024)</option>
+                    <option value="Flowers - Miley Cyrus">Flowers - Miley Cyrus (2023)</option>
+                    <option value="As It Was - Harry Styles">As It Was - Harry Styles (2022)</option>
+                    <option value="Drivers License - Olivia Rodrigo">Drivers License - Olivia Rodrigo (2021)</option>
+                    <option value="Die With A Smile - Lady Gaga & Bruno Mars">Die With A Smile - Lady Gaga & Bruno Mars (2024)</option>
+                  </select>
+                </div>
+
+                <div class="battle-vs-badge">VS</div>
+
+                <div class="battle-selector">
+                  <label for="trackSelectB">곡 B 선택</label>
+                  <select id="trackSelectB" class="form-input">
+                    <option value="Seven (feat. Latto) - Jung Kook" selected>Seven (feat. Latto) - Jung Kook (2023)</option>
+                    <option value="APT. - ROSÉ & Bruno Mars">APT. - ROSÉ & Bruno Mars (2024)</option>
+                    <option value="Cruel Summer - Taylor Swift">Cruel Summer - Taylor Swift (2023)</option>
+                    <option value="As It Was - Harry Styles">As It Was - Harry Styles (2022)</option>
+                    <option value="BIRDS OF A FEATHER - Billie Eilish">BIRDS OF A FEATHER - Billie Eilish (2024)</option>
+                    <option value="STAY - The Kid LAROI & Justin Bieber">STAY - The Kid LAROI & Justin Bieber (2021)</option>
+                  </select>
+                </div>
+
+                <button id="compareBattleBtn" class="btn btn-primary" style="align-self: flex-end;">
+                  <span>1:1 배틀 분석</span>
+                </button>
+              </div>
+
+              <!-- [Empty State] 1:1 배틀 대기 상태 안내 -->
+              <div class="empty-state-box" id="battleEmptyState">
+                <div class="empty-state-icon-pulse">
+                  <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="14.5" y1="17.5" x2="3" y2="6"></line>
+                    <line x1="17.5" y1="14.5" x2="6" y2="3"></line>
+                    <line x1="3" y1="21" x2="21" y2="3"></line>
+                  </svg>
+                </div>
+                <h4 class="empty-state-title">1:1 메가히트 비교 배틀 대기 중</h4>
+                <p class="empty-state-desc">
+                  비교할 두 히트곡을 선택한 후 <strong class="text-green">[1:1 배틀 분석]</strong> 버튼을 눌러주세요.<br>
+                  1,390일간 축적된 1위 독점 일수, 일일 평균 화력, 최고 피크 기록 및 A&R 총평 리포트가 펼쳐집니다.
+                </p>
+              </div>
+
+              <!-- 배틀 비교 스펙 카드 -->
+              <div class="battle-results-grid hidden" id="battleResults">
+                <div class="battle-card track-a" id="battleCardA">
+                  <div class="battle-track-header">
+                    <span class="battle-badge">TRACK A</span>
+                    <h4 id="battleTitleA">APT. - ROSÉ & Bruno Mars</h4>
+                    <span class="battle-genre" id="battleGenreA">Pop Punk | 149 BPM</span>
+                  </div>
+                  <div class="battle-stats-list">
+                    <div class="b-stat"><span>1위 독점 일수:</span> <strong id="battleDaysA">133일</strong></div>
+                    <div class="b-stat"><span>일일 평균 스트리밍:</span> <strong id="battleAvgA">1,350만 회</strong></div>
+                    <div class="b-stat"><span>최고 일일 피크:</span> <strong id="battlePeakA">1,780만 회</strong></div>
+                    <div class="b-stat"><span>음반사:</span> <span id="battleLabelA">Atlantic</span></div>
+                  </div>
+                </div>
+
+                <div class="battle-card track-b" id="battleCardB">
+                  <div class="battle-track-header">
+                    <span class="battle-badge">TRACK B</span>
+                    <h4 id="battleTitleB">Seven (feat. Latto) - Jung Kook</h4>
+                    <span class="battle-genre" id="battleGenreB">UK Garage | 125 BPM</span>
+                  </div>
+                  <div class="battle-stats-list">
+                    <div class="b-stat"><span>1위 독점 일수:</span> <strong id="battleDaysB">65일</strong></div>
+                    <div class="b-stat"><span>일일 평균 스트리밍:</span> <strong id="battleAvgB">1,150만 회</strong></div>
+                    <div class="b-stat"><span>최고 일일 피크:</span> <strong id="battlePeakB">1,590만 회</strong></div>
+                    <div class="b-stat"><span>음반사:</span> <span id="battleLabelB">BIGHIT MUSIC</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="battle-verdict-box hidden" id="battleVerdict">
+                <h4>🏆 A&R 배틀 총평</h4>
+                <p id="battleVerdictText">로제 & 브루노 마스의 'APT.'는 K-POP과 팝펑크 사운드의 글로벌 챌린지 열풍에 힘입어 일간 1,350만 회의 압도적 화력으로 정국의 'Seven' 대비 1위 독점 일수에서 우위를 보였습니다.</p>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+
+        <!-- [탭 3] 데이터 관리 (CRUD) -->
+        <section id="tab-data-manage" class="tab-pane">
+          <div class="card">
+            <div class="card-header space-between">
+              <div>
+                <h3>스트리밍 시계열 데이터 관리 (Full CRUD)</h3>
+                <p class="card-desc">총 1,390일치 실제 1위 데이터를 페이지별로 탐색하고 추가, 수정, 삭제할 수 있습니다.</p>
+              </div>
+              <button id="openAddModalBtn" class="btn btn-primary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                새 데이터 추가
+              </button>
+            </div>
+
+            <!-- 데이터 검색 & 연도별 퀵 필터 & 페이지 크기 -->
+            <div class="table-controls-bar">
+              <div class="search-and-year">
+                <input type="text" id="dataSearchInput" class="form-input search-box" placeholder="곡명, 아티스트, 장르 또는 날짜로 검색...">
+                <div class="year-chips" id="yearFilterChips">
+                  <button class="year-chip active" data-year="all">전체 연도</button>
+                  <button class="year-chip" data-year="2024">2024년</button>
+                  <button class="year-chip" data-year="2023">2023년</button>
+                  <button class="year-chip" data-year="2022">2022년</button>
+                  <button class="year-chip" data-year="2021">2021년</button>
+                </div>
+              </div>
+
+              <div class="table-meta-actions">
+                <div class="page-size-selector">
+                  <span>페이지당</span>
+                  <select id="pageSizeSelect" class="form-input-sm">
+                    <option value="10" selected>10개씩</option>
+                    <option value="15">15개씩</option>
+                    <option value="25">25개씩</option>
+                    <option value="50">50개씩</option>
+                  </select>
+                </div>
+                <div class="filter-stats">
+                  전체 <strong id="tableTotalCount">0</strong>건 중 <span id="tableFilteredCount">0</span>건
+                </div>
+              </div>
+            </div>
+
+            <!-- 데이터 테이블 (Sticky Header 적용) -->
+            <div class="table-responsive table-scroll-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th style="width: 130px;">날짜 (date)</th>
+                    <th style="width: 170px;">1위 스트리밍 (value)</th>
+                    <th>상세 메모 (memo / 곡명 / 장르 / 비고)</th>
+                    <th style="width: 140px; text-align: center;">관리</th>
+                  </tr>
+                </thead>
+                <tbody id="dataTableBody">
+                  <tr>
+                    <td colspan="4" class="text-center py-4">데이터를 불러오는 중입니다...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- 페이지네이션 컨트롤러 -->
+            <div class="pagination-container" id="paginationContainer">
+              <button class="btn btn-sm btn-ghost page-nav-btn" id="prevPageBtn" disabled>&laquo; 이전</button>
+              <div class="page-numbers" id="pageNumbers"></div>
+              <button class="btn btn-sm btn-ghost page-nav-btn" id="nextPageBtn">다음 &raquo;</button>
+            </div>
+
+          </div>
+        </section>
+
+
+        <!-- [탭 3] AI A&R 비서 채팅 인터페이스 -->
+        <section id="tab-chat" class="tab-pane">
+          <div class="chat-container card">
+            
+            <!-- 채팅 헤더 -->
+            <div class="chat-header">
+              <div class="chat-ai-profile">
+                <div class="ai-avatar">
+                  <div class="sound-wave-mini">
+                    <span></span><span></span><span></span>
+                  </div>
+                </div>
+                <div>
+                  <h4>SoundPulse A&R Consultant</h4>
+                  <span class="ai-status-label">실시간 차트 요약 컨텍스트 주입 활성화</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 채팅 메시지 목록 스크롤 영역 -->
+            <div class="chat-messages" id="chatMessages">
+              <!-- 환영 메시지 & 스타터 추천 질문 카드들 -->
+              <div class="chat-starter-container" id="chatStarterContainer">
+                <div class="starter-hero">
+                  <div class="starter-icon">
+                    <span class="pulse-ring"></span>
+                    <div class="assistant-audio-wave">
+                      <span class="wave-bar"></span>
+                      <span class="wave-bar"></span>
+                      <span class="wave-bar"></span>
+                    </div>
+                  </div>
+                  <h3>SoundPulse A&R Consultant</h3>
+                  <p class="starter-desc">
+                    과거 4개년(1,390일) Spotify Global 1위 실제 스트리밍 데이터 요약을 실시간 주입받은 <span class="no-break">AI 비서입니다.</span><br>
+                    궁금한 차트 동향이나 신곡 릴리즈 전략에 대해 아래 추천 카드를 클릭하거나 자유롭게 질문해 보세요.
+                  </p>
+                </div>
+
+                <!-- 이런 질문으로 시작해보세요 (8대 스타터 프롬프트 카드 그리드) -->
+                <div class="starter-section-title">
+                  <span>💡 이런 질문으로 시작해보세요 (클릭 시 즉시 분석)</span>
+                </div>
+                <div class="starter-cards-grid">
+                  <div class="starter-card" data-prompt="12월 연말 캐럴 시즌의 위험성과 스트리밍 폭증률을 분석해줘">
+                    <div class="card-icon">🎄</div>
+                    <div class="card-text">
+                      <strong>연말 캐럴 쇼크(Holiday Shock) 분석</strong>
+                      <p>12월 머라이어 캐리 등 캐럴 차트 독점과 평월 대비 폭증률</p>
+                    </div>
+                  </div>
+
+                  <div class="starter-card" data-prompt="글로벌 1위 트랙들의 평균 BPM과 인기 장르 트렌드는 어때?">
+                    <div class="card-icon">🎧</div>
+                    <div class="card-text">
+                      <strong>음악적 DNA & 템포(BPM) 분석</strong>
+                      <p>지난 4년간 1위를 장악한 곡들의 템포 스위트스팟과 장르</p>
+                    </div>
+                  </div>
+
+                  <div class="starter-card" data-prompt="7월 여름 시즌에 신곡을 발매할 때 최적의 릴리즈 요일과 목표치는?">
+                    <div class="card-icon">☀️</div>
+                    <div class="card-text">
+                      <strong>서머송 컴백 타이밍 & 릴리즈 전략</strong>
+                      <p>글로벌 차트 집계 요일 및 여름 시즌 1위 경쟁 허들</p>
+                    </div>
+                  </div>
+
+                  <div class="starter-card" data-prompt="2021년부터 2024년까지 스포티파이 글로벌 1위 시장의 YoY 성장률은?">
+                    <div class="card-icon">📈</div>
+                    <div class="card-text">
+                      <strong>시장 규모 및 YoY(전년 대비) 성장률</strong>
+                      <p>팬데믹부터 엔데믹까지 4개년 스트리밍 총 파이의 팽창 흐름</p>
+                    </div>
+                  </div>
+
+                  <div class="starter-card" data-prompt="지난 4년간 가장 오랫동안 1위를 독점한 트랙들과 최장 유지 일수는?">
+                    <div class="card-icon">👑</div>
+                    <div class="card-text">
+                      <strong>역대 최장기 1위 롱런 트랙 비교</strong>
+                      <p>로제 'APT.', 정국 'Seven', 해리 스타일스 'As It Was' 롱런 기록</p>
+                    </div>
+                  </div>
+
+                  <div class="starter-card" data-prompt="역대 단일 일간 스트리밍 최고 기록을 달성한 날짜와 곡은 무엇인가요?">
+                    <div class="card-icon">⚡</div>
+                    <div class="card-text">
+                      <strong>역대 최고 피크(Peak) 달성일 분석</strong>
+                      <p>1,700만 회 이상의 슈퍼 피크를 찍은 날짜와 당시 발매 이슈</p>
+                    </div>
+                  </div>
+
+                  <div class="starter-card" data-prompt="로제 'APT.'와 정국 'Seven'의 스트리밍 화력과 장르적 차이점을 비교해줘">
+                    <div class="card-icon">🎸</div>
+                    <div class="card-text">
+                      <strong>K-POP 글로벌 메가히트 비교</strong>
+                      <p>Y2K 팝펑크 사운드 vs UK Garage 댄스팝의 글로벌 확산 공식</p>
+                    </div>
+                  </div>
+
+                  <div class="starter-card" data-prompt="신인 아티스트가 글로벌 1위 진입을 위해 최소한 확보해야 하는 일일 스트리밍 기준선은?">
+                    <div class="card-icon">🎯</div>
+                    <div class="card-text">
+                      <strong>신인 A&R 1위 진입 허들 KPI</strong>
+                      <p>차트 상위 25% 진입을 위한 현실적인 일일 재생수 목표선</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 로딩 인디케이터 (사운드 이퀄라이저 애니메이션) -->
+            <div class="chat-loading hidden" id="chatLoading">
+              <div class="typing-indicator">
+                <span class="wave-bar"></span>
+                <span class="wave-bar"></span>
+                <span class="wave-bar"></span>
+                <span class="wave-bar"></span>
+              </div>
+              <span class="loading-text">A&R 비서가 실시간 차트 데이터를 분석 중입니다...</span>
+            </div>
+
+            <!-- 메시지 입력창 -->
+            <form id="chatForm" class="chat-input-bar">
+              <input type="text" id="chatInput" class="chat-input" placeholder="차트 분석, 스트리밍 기준선, 컴백 전략에 대해 질문하세요..." autocomplete="off">
+              <button type="submit" class="btn btn-primary send-btn" id="sendBtn">
+                <span>전송</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+              </button>
+            </form>
+
+          </div>
+        </section>
+
+      </div>
+    </main>
+
+  </div>
+
+
+  <!-- 서비스 사용 가이드 & 랜딩 퀵투어 모달 -->
+  <div id="guideModal" class="modal-backdrop hidden">
+    <div class="modal-box guide-modal-box">
+      <div class="modal-header">
+        <div class="guide-header-title">
+          <span class="badge">A&R Guide & Tour</span>
+          <h3>SoundPulse AI 활용 가이드</h3>
+        </div>
+        <button class="close-btn" id="closeGuideModalBtn">&times;</button>
+      </div>
+
+      <div class="guide-content-scroll">
+        <div class="guide-hero-banner">
+          <div class="hero-tag">ENTERTAINMENT INTELLIGENCE</div>
+          <h4>데이터로 완성하는 글로벌 음원 릴리즈 전략</h4>
+          <p>일반 ChatGPT는 최신 음원 차트 데이터를 모릅니다. SoundPulse AI는 최근 4개년(1,390일)간의 실제 Spotify Global 1위 시계열 데이터를 분석하고, 실시간 요약 정보를 AI 프롬프트에 주입하여 차별화된 A&R 전략을 제공합니다.</p>
+        </div>
+
+        <div class="guide-steps-grid">
+          <div class="guide-step-card">
+            <div class="step-num">01</div>
+            <div class="step-icon">📊</div>
+            <h5>대시보드 & 7-Day MA</h5>
+            <p>1,390일치 일일 1위 스트리밍 실적과 노이즈를 보정한 7일 이동평균선(보라색 선)을 타임프레임별로 확인하세요.</p>
+          </div>
+
+          <div class="guide-step-card">
+            <div class="step-num">02</div>
+            <div class="step-icon">🎯</div>
+            <h5>Track-to-Track 시뮬레이터</h5>
+            <p>신곡의 장르와 BPM을 넣으면 과거 1위 명곡들과 오디오 유사도를 매칭하여 예상 1위 유지력과 성공률을 예측합니다.</p>
+          </div>
+
+          <div class="guide-step-card">
+            <div class="step-num">03</div>
+            <div class="step-icon">🤖</div>
+            <h5>AI A&R 컨설팅 & CRUD</h5>
+            <p>실시간 차트 요약을 학습한 AI 비서와 전략 상담을 진행하고, 원클릭으로 정규 A&R 전략 보고서(Markdown)를 다운로드하세요.</p>
+          </div>
+        </div>
+
+        <div class="guide-dataset-info">
+          <h6>📌 데이터셋 신뢰성 안내</h6>
+          <p>2021년 1월부터 2024년 10월까지 4개년간의 Spotify Global Daily 1위 전수 조사 데이터(1,390개)를 기반으로 작동하며, 정국('Seven'), 로제&브루노 마스('APT.'), 올리비아 로드리고, 테일러 스위프트 등의 실제 메가히트 서사를 충실히 반영하고 있습니다.</p>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-primary" id="startTourBtn" style="width: 100%;">
+          SoundPulse 시작하기
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 데이터 추가 / 수정 모달 -->
+  <div id="dataModal" class="modal-backdrop hidden">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="modalTitle">새 스트리밍 데이터 추가</h3>
+        <button class="close-btn" id="closeModalBtn">&times;</button>
+      </div>
+      <form id="dataForm">
+        <input type="hidden" id="editItemId">
+        <div class="form-group">
+          <label for="inputDate">날짜 (date, YYYY-MM-DD)</label>
+          <input type="date" id="inputDate" class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label for="inputValue">일일 1위 스트리밍 수치 (value, 만 회)</label>
+          <input type="number" id="inputValue" step="0.1" min="1" class="form-input" placeholder="예: 950.4" required>
+        </div>
+        <div class="form-group">
+          <label for="inputMemo">상세 메모 (memo: 곡명, 장르, 차트 비고)</label>
+          <input type="text" id="inputMemo" class="form-input" placeholder="예: Espresso - Sabrina Carpenter | Nu-Disco | 1위 유지" required>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" id="cancelModalBtn">취소</button>
+          <button type="submit" class="btn btn-primary" id="saveDataBtn">저장하기</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 삭제 확인 모달 -->
+  <div id="deleteConfirmModal" class="modal-backdrop hidden">
+    <div class="modal-box text-center">
+      <h3>정말 삭제하시겠습니까?</h3>
+      <p class="modal-desc" id="deleteTargetDesc">해당 데이터는 영구히 삭제됩니다.</p>
+      <div class="modal-actions justify-center">
+        <button class="btn btn-ghost" id="cancelDeleteBtn">취소</button>
+        <button class="btn btn-danger" id="confirmDeleteBtn">삭제</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI API Key 등록 & 실시간 상태 관리 모달 -->
+  <div id="apiKeyModal" class="modal-backdrop hidden">
+    <div class="modal-box api-key-modal-box">
+      <!-- 모달 헤더: 타이틀과 캡슐 알약(Pill) 뱃지가 한 줄로 깔끔하게 정렬 -->
+      <div class="api-modal-header">
+        <div class="api-modal-header-left">
+          <h3 id="modalApiTitle" class="api-modal-title">실시간 AI 인텔리전스 연결</h3>
+          <span class="api-capsule-badge standby" id="modalApiBadge">
+            <span class="capsule-dot"></span>
+            <span id="modalApiBadgeText">AI 대기 모드</span>
+          </span>
+        </div>
+        <button class="close-btn" id="closeApiKeyModalBtn" aria-label="닫기">&times;</button>
+      </div>
+
+      <div class="modal-body" style="display: flex; flex-direction: column; gap: 14px; padding: 6px 0 10px;">
+        <!-- 현재 연결 상태 배너 -->
+        <div id="modalStatusBanner" class="api-status-banner-card">
+          <div class="api-banner-row">
+            <div class="api-banner-title-group">
+              <span class="api-status-light" id="modalStatusLight"></span>
+              <strong id="modalStatusHeading">AI 대기 모드 (기본 통계 엔진 가동)</strong>
+            </div>
+            <!-- 명확한 버튼 형태의 전체 연결 해제 버튼 (한 줄 유지) -->
+            <button type="button" id="clearApiKeyBtn" class="btn-banner-clear hidden" title="등록된 모든 API Key 연결을 해제합니다">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
+                <line x1="12" y1="2" x2="12" y2="12"></line>
+              </svg>
+              <span>연결 해제</span>
+            </button>
+          </div>
+          <p id="modalStatusDesc" style="color: var(--text-secondary); font-size: 0.8rem; margin: 6px 0 0; line-height: 1.45;">
+            API Key를 등록하시면 실시간 자연어 질문 응답 및 음원 정성 평가가 즉시 활성화됩니다.
+          </p>
+        </div>
+
+        <!-- 3대 API Key 입력 영역 -->
+        <div class="api-key-container" style="display: flex; flex-direction: column; gap: 12px;">
+          
+          <!-- 1. Google Gemini Key 카드 -->
+          <div class="provider-key-card">
+            <div class="provider-card-header">
+              <div class="provider-title-wrap">
+                <span style="font-size: 0.95rem;">🟣</span>
+                <strong>Google Gemini</strong>
+              </div>
+              <span id="geminiStatusBadge" class="key-status-pill disconnected">
+                <span class="pill-indicator"></span>
+                <span class="badge-text">미등록</span>
+              </span>
+            </div>
+            <div class="provider-input-row">
+              <input type="password" id="modalGeminiKeyInput" class="form-input" placeholder="AIzaSy... 또는 새 키 입력" style="flex: 1; font-family: var(--font-mono); font-size: 0.82rem;">
+              <button type="button" id="saveGeminiKeyBtn" class="btn btn-primary btn-key-save">
+                적용
+              </button>
+              <button type="button" id="clearGeminiKeyBtn" class="btn-key-clear hidden" title="Gemini 키 해제">
+                해제
+              </button>
+            </div>
+            <div class="provider-helper-text">
+              * 지원 모델: <strong>gemini-3.8-flash</strong> (자동 백업: 3.6 Flash / 3.5 Flash-Lite / 3.1 Flash-Lite)
+            </div>
+          </div>
+
+          <!-- 2. Anthropic Claude Key 카드 (코디세이 지원) -->
+          <div class="provider-key-card">
+            <div class="provider-card-header">
+              <div class="provider-title-wrap">
+                <span style="font-size: 0.95rem;">🟠</span>
+                <strong>Anthropic (Claude)</strong>
+              </div>
+              <span id="anthropicStatusBadge" class="key-status-pill disconnected">
+                <span class="pill-indicator"></span>
+                <span class="badge-text">미등록</span>
+              </span>
+            </div>
+            <div class="provider-input-row">
+              <input type="password" id="modalAnthropicKeyInput" class="form-input" placeholder="sk-ant-... 또는 코디세이 Virtual Key" style="flex: 1; font-family: var(--font-mono); font-size: 0.82rem;">
+              <button type="button" id="saveAnthropicKeyBtn" class="btn btn-primary btn-key-save">
+                적용
+              </button>
+              <button type="button" id="clearAnthropicKeyBtn" class="btn-key-clear hidden" title="Anthropic 키 해제">
+                해제
+              </button>
+            </div>
+            <div class="provider-helper-text">
+              * 지원 모델: <strong>claude-sonnet-4</strong> (자동 백업: claude-haiku-4 / opus-4-7) | 코디세이 Native Messages 지원
+            </div>
+          </div>
+
+          <!-- 3. OpenAI Key 카드 (코디세이 지원) -->
+          <div class="provider-key-card">
+            <div class="provider-card-header">
+              <div class="provider-title-wrap">
+                <span style="font-size: 0.95rem;">🟢</span>
+                <strong>OpenAI</strong>
+              </div>
+              <span id="openaiStatusBadge" class="key-status-pill disconnected">
+                <span class="pill-indicator"></span>
+                <span class="badge-text">미등록</span>
+              </span>
+            </div>
+            <div class="provider-input-row">
+              <input type="password" id="modalOpenaiKeyInput" class="form-input" placeholder="sk-proj-... 또는 sk-cody-..." style="flex: 1; font-family: var(--font-mono); font-size: 0.82rem;">
+              <button type="button" id="saveOpenaiKeyBtn" class="btn btn-primary btn-key-save">
+                적용
+              </button>
+              <button type="button" id="clearOpenaiKeyBtn" class="btn-key-clear hidden" title="OpenAI 키 해제">
+                해제
+              </button>
+            </div>
+            <div class="provider-helper-text">
+              * 지원 모델: <strong>gpt-5-mini</strong> (0.5x 차감) / <strong>gpt-5.5</strong> (백업: gpt-5.4 / gpt-5.4-mini) | 코디세이 프록시 자동 연동
+            </div>
+          </div>
+
+          <!-- 스마트 키 관리 팁 배너 -->
+          <div class="api-tip-box">
+            💡 <strong>스마트 키 관리 팁:</strong><br>
+            • <strong>Gemini, Anthropic, OpenAI 중 단 하나만 등록하셔도</strong> 모든 실시간 AI A&R 대화와 음원 분석이 즉시 활성화됩니다.<br>
+            • <strong>여러 개 등록 시</strong>에는 스마트 우선순위(Gemini ➔ Claude ➔ OpenAI)로 <strong>무중단 교차 백업</strong>이 자동 가동됩니다.<br>
+            • 코디세이에서 발급받은 Virtual Key(<code>sk-cody-...</code>)는 코디세이 엔드포인트(<code>https://copa.codyssey.kr/v1</code>)로 자동 라우팅됩니다.
+          </div>
+        </div>
+
+        <!-- 활성화되는 기능 리스트 (체크리스트) -->
+        <div class="api-features-card" style="background: var(--bg-tertiary); padding: 14px; border-radius: var(--radius-md); font-size: 0.8rem; border: 1px solid var(--border-color);">
+          <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">
+            ✨ API Key 연결 시 활성화되는 핵심 기능
+          </div>
+          <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; color: var(--text-secondary);">
+            <li style="display: flex; align-items: center; gap: 6px;">
+              <span class="text-green">✓</span>
+              <span><strong>AI A&R 비서:</strong> 1,390일 차트 데이터 기반의 무제한 실시간 생성형 대화</span>
+            </li>
+            <li style="display: flex; align-items: center; gap: 6px;">
+              <span class="text-green">✓</span>
+              <span><strong>음원 업로드:</strong> 감지된 사운드 텍스처에 대한 AI 실시간 정성 평가 코멘트</span>
+            </li>
+            <li style="display: flex; align-items: center; gap: 6px;">
+              <span class="text-green">✓</span>
+              <span><strong>신곡 시뮬레이터:</strong> 글로벌 발매 타깃 월 및 시즌 리스크 맞춤형 프로덕션 조언</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 토스트 알림 메시지 컨테이너 -->
+  <div id="toastNotification" class="toast-notification hidden">
+    <span class="toast-icon">ℹ️</span>
+    <span class="toast-message" id="toastMessage">알림 내용</span>
+  </div>
+
+  <!-- JS Scripts -->
+  <script src="js/api.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/chart.js"></script>
+  <script src="js/data_manager.js"></script>
+  <script src="js/chat.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

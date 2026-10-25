@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+
+# Environment Variables
+.env
+*.local
+
+# Firebase Service Account Keys
+*firebase*.json
+serviceAccountKey.json
+
+# IDE
+.vscode/
+.idea/
+.DS_Store
+
+# Test & DB Local Storage (단, 초기 시딩용 raw data는 유지)
+backend/data_local/
+

@@ -1,0 +1,93 @@
+/* ==========================================================================
+   SoundPulse AI - Mobile Responsive Media Queries
+   (questions.md 항목 1: 모바일 및 작은 화면 사용성 보장)
+   ========================================================================== */
+
+@media (max-width: 900px) {
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: -290px;
+    height: 100vh;
+    box-shadow: var(--shadow-lg);
+  }
+
+  .sidebar.open {
+    left: 0;
+  }
+
+  .mobile-menu-btn {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    cursor: pointer;
+    padding: 8px;
+  }
+
+  .mobile-menu-btn span {
+    width: 20px;
+    height: 2px;
+    background-color: var(--text-primary);
+    border-radius: 2px;
+  }
+
+  .top-nav {
+    padding: 0 16px;
+  }
+
+  .tab-content-container {
+    padding: 16px;
+  }
+
+  .nav-tabs {
+    gap: 4px;
+  }
+
+  .nav-tab {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+  }
+
+  .metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .chart-wrapper {
+    height: 280px;
+  }
+}
+
+@media (max-width: 600px) {
+  .metrics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .nav-actions {
+    display: none; /* 모바일에서는 상단 내보내기 버튼 숨김 */
+  }
+
+  .chat-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .chat-quick-tags {
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .message {
+    max-width: 92%;
+  }
+
+  .table-filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .table-filter-bar .form-input {
+    max-width: 100%;
+  }
+}
+
