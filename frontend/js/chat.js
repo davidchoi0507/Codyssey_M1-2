@@ -46,6 +46,12 @@ class ChatManager {
     this.clearOpenaiKeyBtn = document.getElementById('clearOpenaiKeyBtn');
     this.openaiStatusBadge = document.getElementById('openaiStatusBadge');
 
+    // [신규] 백엔드 서버 URL 설정 엘리먼트
+    this.modalBackendUrlInput = document.getElementById('modalBackendUrlInput');
+    this.saveBackendUrlBtn = document.getElementById('saveBackendUrlBtn');
+    this.backendUrlStatusBadge = document.getElementById('backendUrlStatusBadge');
+    this.backendUrlBadgeText = document.getElementById('backendUrlBadgeText');
+
     this.pendingUserQuery = null;
     this._toastTimer = null;
   }
@@ -234,6 +240,22 @@ class ChatManager {
         alert('해제 실패: ' + err.message);
       }
     });
+
+    // [신규] 백엔드 서버 URL 단독 저장
+    this.saveBackendUrlBtn?.addEventListener('click', async () => {
+      const url = this.modalBackendUrlInput?.value.trim();
+      if (!url) {
+        alert('백엔드 서버 URL을 입력해 주세요.');
+        return;
+      }
+      window.ApiClient.setBaseUrl(url);
+      this.showToast('🌐 백엔드 서버 URL이 업데이트되었습니다.');
+      await this.refreshApiStatus();
+      if (window.appManager) {
+        await window.appManager.connectWithColdStartHandling();
+        await window.appManager.refreshAllData();
+      }
+    });
   }
 
   async refreshApiStatus() {
@@ -353,6 +375,23 @@ class ChatManager {
         status.openai_masked,
         'sk-proj-... 또는 sk-cody-...'
       );
+
+      // 백엔드 서버 URL 설정 인풋 및 뱃지 상태 반영
+      if (this.modalBackendUrlInput) {
+        this.modalBackendUrlInput.value = window.ApiClient.getBaseUrl() || '';
+      }
+      if (this.backendUrlBadgeText) {
+        const base = window.ApiClient.getBaseUrl();
+        if (base) {
+          this.backendUrlBadgeText.textContent = isConnected ? '연결됨' : '대기 중';
+          this.backendUrlStatusBadge?.classList.toggle('connected', isConnected);
+          this.backendUrlStatusBadge?.classList.toggle('disconnected', !isConnected);
+        } else {
+          this.backendUrlBadgeText.textContent = '미설정';
+          this.backendUrlStatusBadge?.classList.remove('connected');
+          this.backendUrlStatusBadge?.classList.add('disconnected');
+        }
+      }
     } catch (err) {
       console.warn('[refreshApiStatus Error]:', err);
     }

@@ -154,6 +154,32 @@ class AppManager {
   }
 
   bindEvents() {
+    // [신규] 콜드스타트 모달 닫기 & 스킵 버튼
+    const closeColdStart = () => {
+      if (this.coldStartModal) this.coldStartModal.classList.add('hidden');
+    };
+    document.getElementById('closeColdStartBtn')?.addEventListener('click', closeColdStart);
+    document.getElementById('skipColdStartBtn')?.addEventListener('click', closeColdStart);
+
+    // [신규] 콜드스타트 모달에서 Render URL 저장 & 즉시 재연결
+    document.getElementById('saveColdStartUrlBtn')?.addEventListener('click', async () => {
+      const urlInput = document.getElementById('coldStartUrlInput');
+      const val = urlInput?.value.trim();
+      if (!val) {
+        alert('Render 백엔드 URL을 입력해 주세요. (예: https://soundpulse-ai-backend.onrender.com)');
+        return;
+      }
+      window.ApiClient.setBaseUrl(val);
+      const desc = document.getElementById('coldStartDesc');
+      if (desc) {
+        desc.innerHTML = `<strong>${val}</strong> 서버로 연결 시도 중입니다...<br>무료 인스턴스 기동 시 최대 30~50초 소요될 수 있습니다.`;
+      }
+      this.animateProgressBar();
+      await this.connectWithColdStartHandling();
+      await this.refreshAllData();
+      await this.refreshConversations();
+    });
+
     // 탭 전환
     this.tabButtons.forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -778,13 +804,30 @@ class AppManager {
     const maxAttempts = 15;
     let coldStartTimer = null;
 
-    // 2.5초 이상 응답이 없으면 콜드스타트 모달 띄우기
-    coldStartTimer = setTimeout(() => {
+    const currentBaseUrl = window.ApiClient.getBaseUrl();
+    const isLocal = typeof window !== 'undefined' &&
+      (!window.location.hostname || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:');
+
+    // Vercel 등 배포 환경인데 백엔드 URL이 아직 설정되지 않은 경우
+    if (!isLocal && !currentBaseUrl) {
       if (this.coldStartModal) {
         this.coldStartModal.classList.remove('hidden');
-        this.animateProgressBar();
+        const heading = document.getElementById('coldStartHeading');
+        const desc = document.getElementById('coldStartDesc');
+        if (heading) heading.textContent = 'Render 백엔드 서버를 연결해 주세요';
+        if (desc) {
+          desc.innerHTML = '현재 Vercel 프론트엔드가 Render 백엔드 주소를 찾고 있습니다.<br>배포된 <strong>Render Web Service URL</strong>을 아래에 입력하시면 실시간 연결됩니다.';
+        }
       }
-    }, 2500);
+    } else {
+      // 2.5초 이상 응답이 없으면 콜드스타트 모달 띄우기
+      coldStartTimer = setTimeout(() => {
+        if (this.coldStartModal) {
+          this.coldStartModal.classList.remove('hidden');
+          this.animateProgressBar();
+        }
+      }, 2500);
+    }
 
     while (attempts < maxAttempts) {
       try {
@@ -806,6 +849,8 @@ class AppManager {
     }
 
     clearTimeout(coldStartTimer);
+    // 15회 시도 후 실패 시 모달을 닫아 화면 접근 보장
+    if (this.coldStartModal) this.coldStartModal.classList.add('hidden');
     if (this.systemStatusText) {
       this.systemStatusText.textContent = '서버 응답 지연 (오프라인 모드)';
     }

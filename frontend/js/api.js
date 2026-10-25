@@ -3,22 +3,44 @@
  * 백엔드 REST API 통신 및 Render 콜드스타트 감지
  */
 
-// 로컬 개발(localhost, 127.0.0.1, Live Server, file://) 및 클라우드 배포(Render/Vercel) 완전 대응 Base URL
-const API_BASE_URL = window.API_BASE_URL || (
-  typeof window !== 'undefined' &&
-  (
-    !window.location.hostname ||
-    window.location.hostname === 'localhost' ||
-    window.location.hostname === '127.0.0.1' ||
-    window.location.protocol === 'file:'
-  )
-    ? 'http://localhost:8000'
-    : ''
-);
+// 로컬 개발 및 클라우드 배포(Render/Vercel) 완전 대응 동적 Base URL 해석기
+function getApiBaseUrl() {
+  if (typeof window !== 'undefined') {
+    // 1. window.API_BASE_URL (전역 주입 우선)
+    if (window.API_BASE_URL && String(window.API_BASE_URL).trim()) {
+      return String(window.API_BASE_URL).trim().replace(/\/+$/, '');
+    }
+    // 2. localStorage에 저장된 사용자 백엔드 URL
+    const saved = localStorage.getItem('SOUNDPULSE_API_URL');
+    if (saved && saved.trim()) {
+      return saved.trim().replace(/\/+$/, '');
+    }
+    // 3. 로컬 호스트 환경 감지
+    const h = window.location.hostname;
+    if (!h || h === 'localhost' || h === '127.0.0.1' || window.location.protocol === 'file:') {
+      return 'http://localhost:8000';
+    }
+  }
+  return '';
+}
 
 class ApiClient {
+  static getBaseUrl() {
+    return getApiBaseUrl();
+  }
+
+  static setBaseUrl(url) {
+    if (!url) return;
+    const clean = String(url).trim().replace(/\/+$/, '');
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('SOUNDPULSE_API_URL', clean);
+      window.API_BASE_URL = clean;
+    }
+  }
+
   static async request(endpoint, options = {}, timeoutMs = 60000) {
-    const url = `${API_BASE_URL}${endpoint}`;
+    const baseUrl = this.getBaseUrl();
+    const url = `${baseUrl}${endpoint}`;
     const defaultHeaders = {
       'Content-Type': 'application/json',
     };
