@@ -113,21 +113,31 @@ class ApiClient {
   }
 
   // 2-d. [신규] Librosa 정량 분석 + AI 정성 평가 음원 분석
-  static async analyzeAudio(file) {
+  static async analyzeAudio(file, timeoutMs = 15000) {
     const url = `${this.getBaseUrl()}/api/data/analyze-audio`;
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await fetch(url, {
-      method: 'POST',
-      body: formData,
-    });
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.detail || `음원 분석 실패 (HTTP ${response.status})`);
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        body: formData,
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || `음원 분석 실패 (HTTP ${response.status})`);
+      }
+      return await response.json();
+    } catch (err) {
+      clearTimeout(timer);
+      throw err;
     }
-    return await response.json();
   }
 
   // 3. 데이터 CRUD

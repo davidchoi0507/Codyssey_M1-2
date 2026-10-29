@@ -405,19 +405,19 @@ class DataService:
         """
         import os
         import re
-        import numpy as np
 
         base_name = os.path.splitext(filename)[0]
         track_title = re.sub(r"[_\-]+", " ", base_name).strip()
 
-        bpm = 120.0
-        duration_sec = 0.0
-        energy = 0.15
-        brightness = 2000.0
-        engine_used = "librosa"
+        bpm = 124.0
+        duration_sec = 180.0
+        energy = 0.18
+        brightness = 2200.0
+        engine_used = "fallback"
 
         try:
             import librosa
+            import numpy as np
             y, sr = librosa.load(file_path, sr=22050, duration=60.0)
             try:
                 duration_sec = round(float(librosa.get_duration(path=file_path)), 1)
@@ -433,6 +433,7 @@ class DataService:
 
             sc_val = float(np.mean(librosa.feature.spectral_centroid(y=y, sr=sr)))
             brightness = round(sc_val, 1)
+            engine_used = "librosa"
         except Exception as e:
             print(f"[Audio Analysis Librosa Fallback]: {e}")
             engine_used = "fallback"
