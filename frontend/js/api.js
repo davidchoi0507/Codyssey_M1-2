@@ -106,7 +106,7 @@ class ApiClient {
 
   // 2-c. A&R 전략 보고서 원클릭 다운로드
   static async getExecutiveReport() {
-    const url = `${API_BASE_URL}/api/data/report`;
+    const url = `${this.getBaseUrl()}/api/data/report`;
     const res = await fetch(url);
     if (!res.ok) throw new Error('보고서 생성 실패');
     return await res.text();
@@ -114,7 +114,7 @@ class ApiClient {
 
   // 2-d. [신규] Librosa 정량 분석 + AI 정성 평가 음원 분석
   static async analyzeAudio(file) {
-    const url = `${API_BASE_URL}/api/data/analyze-audio`;
+    const url = `${this.getBaseUrl()}/api/data/analyze-audio`;
     const formData = new FormData();
     formData.append('file', file);
 
